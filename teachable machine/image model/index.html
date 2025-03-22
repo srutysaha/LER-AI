@@ -1,0 +1,164 @@
+<!-- STEP 1: Type "! + tab" for this doctype content -->
+<!-- STEP 2: Paste the teachable machine copied content under body tag-->
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Shape Identifier</title>
+
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Big+Shoulders+Stencil:opsz,wght@10..72,100..900&family=Nunito:ital,wght@0,200..1000;1,200..1000&display=swap');
+
+        .nunito {
+            font-family: "Nunito", sans-serif;
+            font-optical-sizing: auto;
+            font-weight: 500;
+            font-style: normal;
+        }
+
+
+        .big-shoulders-stencil {
+            font-family: "Big Shoulders Stencil", sans-serif;
+            font-optical-sizing: auto;
+            font-weight: 800;
+            font-style: normal;
+        }
+
+
+        body {
+            background-image: url('shapes-bg.jpg');
+            background-size: cover;
+            color: whitesmoke;
+            font-weight: 700;
+        }
+
+        h1 {
+            font-style: bold;
+            text-align: center;
+            font-size: 7vw;
+        }
+
+        h3 {
+            font-size: 2vw;
+            text-align: center;
+        }
+        #webcam-container{
+            padding:2%;
+
+        }
+        #label-container{
+            font-size: 2vw ;
+            margin:2%;
+
+        }
+        button{
+            background-color:chartreuse;
+            height:40px;
+            font-size: 3vh;
+            appearance: none;
+        }
+        
+
+        .hero {
+            min-height: 100vh;
+            margin: 3% 10%;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            border: 2px solid white;
+            border-radius: 50px;
+            background-color: rgba(0, 0, 0, 0.3);
+        }
+        @media screen and (max-width:500px) {
+            h1{
+                font-size: 8vh;
+            }
+            h3{
+                font-size:2vh;
+            }
+            #label-container{
+                font-size: 3vh;
+            }
+            .hero{
+                margin:5%;
+            }
+            button{
+                height:30px;
+            }
+        }
+
+    </style>
+</head>
+
+<body>
+    <div class="hero">
+        <h1 class="big-shoulders-stencil"> IDENTIFYING SHAPES! </h1>
+        <h3 class="nunito">Teachable Machine Image Model - Identify shapes around you</h3>
+        <button type="button" onclick="init()">Start Model</button>
+        <div id="webcam-container"></div>
+        <div id="label-container"></div>
+    </div>
+    <script src="https://cdn.jsdelivr.net/npm/@tensorflow/tfjs@latest/dist/tf.min.js"></script>
+    <script
+        src="https://cdn.jsdelivr.net/npm/@teachablemachine/image@latest/dist/teachablemachine-image.min.js"></script>
+    <script type="text/javascript">
+        // More API functions here:
+        // https://github.com/googlecreativelab/teachablemachine-community/tree/master/libraries/image
+
+        // the link to your model provided by Teachable Machine export panel
+        const URL = "https://teachablemachine.withgoogle.com/models/KEvKjOE1Z/";
+
+        let model, webcam, labelContainer, maxPredictions;
+
+        // Load the image model and setup the webcam
+        async function init() {
+            const modelURL = URL + "model.json";
+            const metadataURL = URL + "metadata.json";
+
+            // load the model and metadata
+            // Refer to tmImage.loadFromFiles() in the API to support files from a file picker
+            // or files from your local hard drive
+            // Note: the pose library adds "tmImage" object to your window (window.tmImage)
+            model = await tmImage.load(modelURL, metadataURL);
+            maxPredictions = model.getTotalClasses();
+
+            // Convenience function to setup a webcam
+            const flip = true; // whether to flip the webcam
+            webcam = new tmImage.Webcam(300, 300, flip); // width, height, flip
+            await webcam.setup(); // request access to the webcam
+            await webcam.play();
+            window.requestAnimationFrame(loop);
+
+            // append elements to the DOM
+            document.getElementById("webcam-container").appendChild(webcam.canvas);
+            labelContainer = document.getElementById("label-container");
+            for (let i = 0; i < maxPredictions; i++) { // and class labels
+                labelContainer.appendChild(document.createElement("div"));
+            }
+        }
+
+        async function loop() {
+            webcam.update(); // update the webcam frame
+            await predict();
+            window.requestAnimationFrame(loop);
+        }
+
+        // run the webcam image through the image model
+        async function predict() {
+            // predict can take in an image, video or canvas html element
+            const prediction = await model.predict(webcam.canvas);
+            for (let i = 0; i < maxPredictions; i++) {
+                const classPrediction =
+                    prediction[i].className + ": " + prediction[i].probability.toFixed(1);
+                labelContainer.childNodes[i].innerHTML = classPrediction;
+            }
+        }
+    </script>
+
+
+</body>
+
+</html>
